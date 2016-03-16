@@ -1,7 +1,8 @@
--- lib/bytes.lua
-module(..., package.seeall)
+-- @module lib.bytes
 
-function hexdigit2decimal(a)
+local bytes = {}
+
+function bytes.hexdigit2decimal(a)
   --[[ Converts a hex digit into its decimal value.
   --
   -- a: Char, a hex digit.
@@ -13,7 +14,7 @@ function hexdigit2decimal(a)
   return string.byte(a) - string.byte("0")
 end
 
-function decimal2hexdigit(a)
+function bytes.decimal2hexdigit(a)
   --[[ Converts a decimal value into a hex digit.
   --
   -- a: Integer, with value in [0..256).
@@ -26,7 +27,7 @@ function decimal2hexdigit(a)
   end
 end
 
-function decimal2base64digit(a)
+function bytes.decimal2base64digit(a)
   --[[ Converts a decimal into a single base64 digit.
   --
   -- a: Integer, with value in [0..64).
@@ -45,7 +46,7 @@ function decimal2base64digit(a)
   end
 end
 
-function hex2bytearray(a)
+function bytes.hex2bytearray(a)
   --[[ Converts a hex string into a corresponding byte array.
   -- 
   -- a: String, hex.
@@ -54,15 +55,15 @@ function hex2bytearray(a)
   --]]
   result = {}
   for i = 1, string.len(a), 2 do
-    first_triple = hexdigit2decimal(a:sub(i, i))
-    second_triple = hexdigit2decimal(a:sub(i+1, i+1))
+    first_triple = bytes.hexdigit2decimal(a:sub(i, i))
+    second_triple = bytes.hexdigit2decimal(a:sub(i+1, i+1))
     byte = first_triple*16 + second_triple 
     table.insert(result, byte)
   end
   return result
 end
 
-function bytearray2base64(a)
+function bytes.bytearray2base64(a)
   --[[ Converts a byte array into a base64 string.
   --
   -- a: Byte array.
@@ -76,10 +77,10 @@ function bytearray2base64(a)
     a3 = a[i+2] or 0
     total_value = a1*256*256 + a2*256 + a3
 
-    c1 = decimal2base64digit(math.floor(total_value / math.pow(64, 3)))
-    c2 = decimal2base64digit(math.floor((total_value / math.pow(64, 2))) % 64)
-    c3 = decimal2base64digit(math.floor((total_value / math.pow(64, 1))) % 64)
-    c4 = decimal2base64digit(total_value % 64)
+    c1 = bytes.decimal2base64digit(math.floor(total_value / math.pow(64, 3)))
+    c2 = bytes.decimal2base64digit(math.floor((total_value / math.pow(64, 2))) % 64)
+    c3 = bytes.decimal2base64digit(math.floor((total_value / math.pow(64, 1))) % 64)
+    c4 = bytes.decimal2base64digit(total_value % 64)
 
     if i == #a then
       c3, c4 = "=", "="      
@@ -91,7 +92,7 @@ function bytearray2base64(a)
   return result
 end
 
-function bytearrayxor(a, b)
+function bytes.bytearrayxor(a, b)
   --[[ Computes elementwise xor of two byte arrays.
   --
   -- a, b: Byte arrays to be xored; have to be of the same length.
@@ -105,7 +106,7 @@ function bytearrayxor(a, b)
   return c
 end
 
-function bytearray2hex(a)
+function bytes.bytearray2hex(a)
   --[[ Computes a hex representation of a byte array.
   --
   -- a: Byte array.
@@ -115,9 +116,11 @@ function bytearray2hex(a)
   c = ""
   for i = 1, #a do
     byte = a[i]
-    c1 = decimal2hexdigit(math.floor(byte / 16))
-    c2 = decimal2hexdigit(byte % 16)
+    c1 = bytes.decimal2hexdigit(math.floor(byte / 16))
+    c2 = bytes.decimal2hexdigit(byte % 16)
     c = c .. c1 .. c2
   end
   return c
 end
+
+return bytes
