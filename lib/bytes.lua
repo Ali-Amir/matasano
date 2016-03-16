@@ -123,4 +123,18 @@ function bytes.bytearray2hex(a)
   return c
 end
 
+function bytes.bytearray2string(a)
+  --[[ Computes a string representation of a byte array.
+  --
+  -- a: Byte array.
+  -- return:
+  -- - String.
+  --]]
+  c = ""
+  for i = 1, #a do
+    c = c .. string.char(a[i])
+  end
+  return c
+end
+
 return bytes
