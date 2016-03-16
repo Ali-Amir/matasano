@@ -151,4 +151,19 @@ function bytes.string2bytearray(a)
   return byte_array
 end
 
+function bytes.popcount(a)
+  --[[ Computes number of 1's in the binary representation of a number.
+  --
+  -- a: Integer, number whose bits to count.
+  -- return:
+  -- - Integer, number of 1's.
+  --]]
+  num_ones = 0
+  while a > 0 do
+    num_ones = num_ones + (bit32.band(a, 1))
+    a = bit32.arshift(a, 1)
+  end
+  return num_ones
+end
+
 return bytes

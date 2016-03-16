@@ -56,4 +56,22 @@ function toolbox.encode_with_key(seq, key)
   return bytes.bytearrayxor(seq, toolbox.replicate_to_match(key, #seq))
 end
 
+function toolbox.hamming_distance(a, b)
+  --[[ Computes a hamming distance between two byte arrays.
+  --
+  -- a, b: Byte arrays, between which to compute the HD.
+  -- return:
+  -- - Integer, the HD.
+  -- raises:
+  -- - Different length exception if #a != #b.
+  --]]
+  assert(#a == #b, "Inputs have to be of the same length")
+
+  hd = 0
+  for i = 1, #a do
+    hd = hd + bytes.popcount(bit32.bxor(a[i], b[i]))
+  end
+  return hd
+end
+
 return toolbox
