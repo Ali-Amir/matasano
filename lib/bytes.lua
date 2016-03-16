@@ -137,4 +137,18 @@ function bytes.bytearray2string(a)
   return c
 end
 
+function bytes.string2bytearray(a)
+  --[[ Computes a byte array representation of a string.
+  --
+  -- a - String.
+  -- return:
+  -- - Byte array.
+  --]]
+  byte_array = {}
+  for i = 1, #a do
+    table.insert(byte_array, string.byte(a:sub(i, i)))
+  end
+  return byte_array
+end
+
 return bytes
