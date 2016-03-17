@@ -1,12 +1,13 @@
 -- @module lib.toolbox
 
-local english = require('lib.english')
-local vectors = require('lib.vectors')
 local bytes = require('lib.bytes')
+local english = require('lib.english')
+local sorting = require('lib.sorting')
+local vectors = require('lib.vectors')
 
 local toolbox = {}
 
-function toolbox.score_string_as_word(text)
+function toolbox.score_string_as_english(text)
   --[[ Returns a score for a given text. Higher score implies lower likelihood
   -- of the input text to be a valid English text.
   --
@@ -25,7 +26,15 @@ function toolbox.score_string_as_word(text)
     end
   end
 
-  return vectors.norm(vectors.diff(freq, english.letters.freq_lower))
+  penalty = 0.0
+  for i = 1,#text do
+    ch = text:sub(i, i)
+    if not english.is_valid_char(ch) then
+      penalty = penalty + 1e3/#text
+    end
+  end
+
+  return vectors.norm(vectors.diff(freq, english.letters.freq_lower)) + penalty
 end
 
 function toolbox.replicate_to_match(piece, len)
@@ -54,6 +63,33 @@ function toolbox.encode_with_key(seq, key)
   -- - Array of bytes, of size #seq - the encoded sequence.
   --]]
   return bytes.bytearrayxor(seq, toolbox.replicate_to_match(key, #seq))
+end
+
+function toolbox.decode_one_char_encryption(seq)
+  --[[ Given a byte sequence that is a result of a single character encryption
+  -- of plaintext English, returns a list of potential candidate decodings in
+  -- the decreasing order of likelihood.
+  --
+  -- seq: Array of bytes, the ciphertext.
+  -- return:
+  -- - An array of pairs ((k, v), score), where k is the key, v is the decryption
+  --   as a plaintext and score is the likelihood. The array is sorted by
+  --   decreasing likelihood.
+  --]]
+  scores = {}
+  for i = 0, 255 do
+    b = {}
+    for j = 1,#seq do
+      table.insert(b, i)
+    end
+    c = bytes.bytearrayxor(seq, b)
+    text = bytes.bytearray2string(c)
+    cur_score = toolbox.score_string_as_english(text)
+    scores[{i, text}] = cur_score
+  end
+
+  kv_pairs = sorting.sort_table_by_value(scores)
+  return kv_pairs
 end
 
 function toolbox.hamming_distance(a, b)
