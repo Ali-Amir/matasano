@@ -27,6 +27,26 @@ function bytes.decimal2hexdigit(a)
   end
 end
 
+function bytes.base64digit2decimal(a)
+  --[[ Converts a base64 digit into its decimal value.
+  --
+  -- a: Char, a base64 digit.
+  -- return: Integer, in range [0,64), value of the input.
+  --]]
+  if "A" <= a and a <= "Z" then
+    return string.byte(a) - string.byte("A")
+  elseif "a" <= a and a <= "z" then
+    return string.byte(a) - string.byte("a") + 26
+  elseif "0" <= a and a <= "9" then
+    return string.byte(a) - string.byte("0") + 52
+  elseif a == "+" then
+    return 62
+  else
+    assert(a == "/" or a == "=", "Invalid character "..a)
+    return 63
+  end
+end
+
 function bytes.decimal2base64digit(a)
   --[[ Converts a decimal into a single base64 digit.
   --
@@ -59,6 +79,31 @@ function bytes.hex2bytearray(a)
     second_triple = bytes.hexdigit2decimal(a:sub(i+1, i+1))
     byte = first_triple*16 + second_triple 
     table.insert(result, byte)
+  end
+  return result
+end
+
+function bytes.base642bytearray(a)
+  --[[ Converts a base64 string into a corresponding byte array.
+  -- 
+  -- a: String, base64.
+  -- return:
+  -- - Array of bytes.
+  --]]
+  result = {}
+  for i = 1, string.len(a), 4 do
+    first_six = bytes.base64digit2decimal(a:sub(i, i))
+    second_six = bytes.base64digit2decimal(a:sub(i+1, i+1))
+    third_six = bytes.base64digit2decimal(a:sub(i+2, i+2))
+    fourth_six = bytes.base64digit2decimal(a:sub(i+3, i+3))
+    value = first_six*64*64*64 + second_six*64*64 + third_six*64 + fourth_six
+    table.insert(result, math.floor(value / 256 / 256))
+    if third_six ~= "=" then
+      table.insert(result, math.floor(value / 256) % 256)
+      if fourth_six ~= "=" then
+        table.insert(result, value % 256)
+      end
+    end
   end
   return result
 end
