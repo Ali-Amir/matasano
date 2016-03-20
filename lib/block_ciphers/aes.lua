@@ -4,127 +4,6 @@ local GF256 = require('lib.finite_fields').GF256
 
 local aes = {}
 
-function aes.encode(block, key)
-  --[[ Encrypts a block of size 128 bits with a key key under AES:
-  -- https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
-  --
-  -- block: Array of bytes, of length 16, the plaintext to be encrypted.
-  -- key: Integer, key of encryption.
-  -- return:
-  -- - Array of bytes, the ciphertext.
-  --]]
-  -- 0. Initialize variables.
-  local rounds = 10 
-  local input_state = AESMat:new(block)
-  local key_mat = AESMat:new(key)
-  local key_scheduler = KeyScheduler:new(key_mat)
-  -- 1. Add round key.
-  local round_key = key_scheduler:get_key(0)
-  input_state:add(round_key)
-  -- 2. Do the rounds.
-  for round = 1,rounds do
-    -- 2.1. Substitute bytes.
-    input_state:sub_bytes()
-    -- 2.2. Shift rows.
-    input_state:shift_rows()
-    -- 2.3. Mix rows.
-    input_state:mix_rows()
-    -- 2.4. Add round key.
-    round_key = key_scheduler:get_key(round)
-    input_state:add(round_key)
-  end
-end
-
-function aes.decode()
-  --[[ TODO
-  --
-  --]]
-end
-
-local KeyScheduler = {}
-
-function KeyScheduler:g(round, word)
-  --[[ Computes g of a given word as described here:
-  -- https://engineering.purdue.edu/kak/compsec/NewLectures/Lecture8.pdf
-  --
-  -- round: Integer, current round.
-  -- word: Array of bytes, 4 bytes that constitute the word; modifies the input.
-  -- return:
-  -- - Array of bytes, output word.
-  --]]
-  for i = 1,4 do
-    word[i] = AESMat.sbox[word[i] + 1]
-  end
-  word[1] = word[1] ~ self.rcon[round]
-  return word
-end
-
-function KeyScheduler:cur_round_key(round, prev_key)
-  --[[ Computes the key for the current round, given the key for the previous round.
-  --
-  -- round: Integer, current round.
-  -- prev_key: AESMat object, representing the key of the previous round.
-  -- return:
-  -- - AESMat object, representing the key of the next round.
-  --]]
-  local new_a = {}
-  local g = KeyScheduler:g({prev_key.a[1][4], prev_key.a[2][4], prev_key.a[3][4], prev_key.a[4][4]})
-  new_block = {}
-  for i = 1,4 do
-    new_block[0*4 + i] = g[i] ~ prev_key.a[i][1]
-  end
-  for i = 1,4 do
-    new_block[1*4 + i] = new_block[0*4 + i] ~ prev_key.a[i][2]
-  end
-  for i = 1,4 do
-    new_block[2*4 + i] = new_block[1*4 + i] ~ prev_key.a[i][3]
-  end
-  for i = 1,4 do
-    new_block[3*4 + i] = new_block[2*4 + i] ~ prev_key.a[i][4]
-  end
-  return AESMat:new(new_block)
-end
-
-function KeyScheduler:new(key)
-  --[[ Creates a new KeyScheduler initialized with given key.
-  --
-  -- key: AESMat object, initialization key.
-  -- return:
-  -- - KeyScheduler object.
-  --]]
-  local block = {}
-  for i = 1,4 do
-    for j = 1,4 do
-      table.insert(block, mat.a[i][j])
-    end
-  end
-
-  setmetatable(KeyScheduler, {__index = ks})
-
-  local ks = {}
-  ks.rc = {}
-  ks.rc[1] = 0x01
-  for round = 2,10 do
-    ks.rc[round] = GF256:new(ks.rc[round - 1]).mul(GF256:new(0x02)).v
-  end
-  ks.keys = {}
-  ks.keys[0] = AESMat:new(block)
-  for round = 1,10 do
-    ks.keys[round] = KeyScheduler:cur_round_key(round, ks.keys[round - 1])
-  end
-  return ks
-end
-
-function KeyScheduler:get_key(round)
-  --[[ Returns a key for a given round.
-  --
-  -- round: Integer, round number between [0..12).
-  -- return:
-  -- - Array of bytes, 4 bytes representing the key word of a round.
-  --]]
-  return self.keys[round]
-end
-
 local AESMat = {}
 
 AESMat.sbox = {
@@ -177,7 +56,7 @@ function AESMat:new(block)
   a[4] = {block[4], block[8], block[12], block[16]}
   local mat = {}
   mat.a = a
-  setmetatable(AESMat, {__index = mat})
+  setmetatable(mat, {__index = AESMat})
   return mat
 end
 
@@ -334,6 +213,134 @@ function AESMat:inv_mix_columns()
   end
   self.a = sp
   return self
+end
+
+local KeyScheduler = {}
+
+function KeyScheduler:g(round, word)
+  --[[ Computes g of a given word as described here:
+  -- https://engineering.purdue.edu/kak/compsec/NewLectures/Lecture8.pdf
+  --
+  -- round: Integer, current round.
+  -- word: Array of bytes, 4 bytes that constitute the word; modifies the input.
+  -- return:
+  -- - Array of bytes, output word.
+  --]]
+  for i = 1,4 do
+    word[i] = AESMat.sbox[word[i] + 1]
+  end
+  word[1] = word[1] ~ self.rcon[round]
+  return word
+end
+
+function KeyScheduler:cur_round_key(round, prev_key)
+  --[[ Computes the key for the current round, given the key for the previous round.
+  --
+  -- round: Integer, current round.
+  -- prev_key: AESMat object, representing the key of the previous round.
+  -- return:
+  -- - AESMat object, representing the key of the next round.
+  --]]
+  local new_a = {}
+  local g = self:g(round, {prev_key.a[1][4], prev_key.a[2][4], prev_key.a[3][4], prev_key.a[4][4]})
+  new_block = {}
+  for i = 1,4 do
+    new_block[0*4 + i] = g[i] ~ prev_key.a[i][1]
+  end
+  for i = 1,4 do
+    new_block[1*4 + i] = new_block[0*4 + i] ~ prev_key.a[i][2]
+  end
+  for i = 1,4 do
+    new_block[2*4 + i] = new_block[1*4 + i] ~ prev_key.a[i][3]
+  end
+  for i = 1,4 do
+    new_block[3*4 + i] = new_block[2*4 + i] ~ prev_key.a[i][4]
+  end
+  return AESMat:new(new_block)
+end
+
+function KeyScheduler:new(key)
+  --[[ Creates a new KeyScheduler initialized with given key.
+  --
+  -- key: AESMat object, initialization key.
+  -- return:
+  -- - KeyScheduler object.
+  --]]
+  local block = {}
+  for i = 1,4 do
+    for j = 1,4 do
+      table.insert(block, key.a[i][j])
+    end
+  end
+
+  local ks = {}
+  setmetatable(ks, {__index = KeyScheduler})
+  ks.rcon = {}
+  ks.rcon[1] = 0x01
+  for round = 2,10 do
+    ks.rcon[round] = (GF256:new(ks.rcon[round - 1])):mul(GF256:new(0x02)).v
+  end
+  ks.keys = {}
+  ks.keys[0] = AESMat:new(block)
+  for round = 1,10 do
+    ks.keys[round] = ks:cur_round_key(round, ks.keys[round - 1])
+  end
+  return ks
+end
+
+function KeyScheduler:get_key(round)
+  --[[ Returns a key for a given round.
+  --
+  -- round: Integer, round number between [0..12).
+  -- return:
+  -- - Array of bytes, 4 bytes representing the key word of a round.
+  --]]
+  return self.keys[round]
+end
+
+function aes.encrypt(block, key)
+  --[[ Encrypts a block of size 128 bits with a key key under AES:
+  -- https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+  --
+  -- block: Array of bytes, of length 16, the plaintext to be encrypted.
+  -- key: Integer, key of encryption.
+  -- return:
+  -- - Array of bytes, the ciphertext.
+  --]]
+  -- 0. Initialize variables.
+  local rounds = 10 
+  local input_state = AESMat:new(block)
+  local key_mat = AESMat:new(key)
+  local key_scheduler = KeyScheduler:new(key_mat)
+  -- 1. Add round key.
+  local round_key = key_scheduler:get_key(0)
+  input_state:add(round_key)
+  -- 2. Do the rounds.
+  for round = 1,rounds do
+    -- 2.1. Substitute bytes.
+    input_state:sub_bytes()
+    -- 2.2. Shift rows.
+    input_state:shift_rows()
+    -- 2.3. Mix rows.
+    input_state:mix_columns()
+    -- 2.4. Add round key.
+    round_key = key_scheduler:get_key(round)
+    input_state:add(round_key)
+  end
+  -- Get the final state into a byte array.
+  ciphertext = {}
+  for j = 1,4 do
+    for i = 1,4 do
+      ciphertext[(j - 1)*4 + i] = input_state.a[i][j]
+    end
+  end
+  return ciphertext
+end
+
+function aes.decrypt()
+  --[[ TODO
+  --
+  --]]
 end
 
 return aes

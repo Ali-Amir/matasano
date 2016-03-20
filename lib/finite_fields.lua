@@ -13,11 +13,11 @@ function GF256:new(value)
   --]]
   local el = {}
   el.v = value
-  setmetatable(GF256, {__index = el})
+  setmetatable(el, {__index = GF256})
   return el
 end
 
-function GF256:mult(B)
+function GF256:mul(B)
   --[[ Multiplies self by B, as described in:
   -- https://en.wikipedia.org/wiki/Finite_field_arithmetic#Rijndael.27s_finite_field
   --
