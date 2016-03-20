@@ -19,7 +19,7 @@ function aes.encode(block, key)
   local key_mat = AESMat:new(key)
   local key_scheduler = KeyScheduler:new(key_mat)
   -- 1. Add round key.
-  local round_key = key_scheduler:next_key()
+  local round_key = key_scheduler:get_key(0)
   input_state:add(round_key)
   -- 2. Do the rounds.
   for round = 1,rounds do
@@ -30,7 +30,7 @@ function aes.encode(block, key)
     -- 2.3. Mix rows.
     input_state:mix_rows()
     -- 2.4. Add round key.
-    round_key = key_scheduler:next_key()
+    round_key = key_scheduler:get_key(round)
     input_state:add(round_key)
   end
 end
@@ -42,15 +42,87 @@ function aes.decode()
 end
 
 local KeyScheduler = {}
-function KeyScheduler:new()
-  --[[ TODO
+
+function KeyScheduler:g(round, word)
+  --[[ Computes g of a given word as described here:
+  -- https://engineering.purdue.edu/kak/compsec/NewLectures/Lecture8.pdf
   --
+  -- round: Integer, current round.
+  -- word: Array of bytes, 4 bytes that constitute the word; modifies the input.
+  -- return:
+  -- - Array of bytes, output word.
   --]]
+  for i = 1,4 do
+    word[i] = AESMat.sbox[word[i] + 1]
+  end
+  word[1] = word[1] ~ self.rcon[round]
+  return word
 end
-function KeyScheduler:next_key()
-  --[[ TODO
+
+function KeyScheduler:cur_round_key(round, prev_key)
+  --[[ Computes the key for the current round, given the key for the previous round.
   --
+  -- round: Integer, current round.
+  -- prev_key: AESMat object, representing the key of the previous round.
+  -- return:
+  -- - AESMat object, representing the key of the next round.
   --]]
+  local new_a = {}
+  local g = KeyScheduler:g({prev_key.a[1][4], prev_key.a[2][4], prev_key.a[3][4], prev_key.a[4][4]})
+  new_block = {}
+  for i = 1,4 do
+    new_block[0*4 + i] = g[i] ~ prev_key.a[i][1]
+  end
+  for i = 1,4 do
+    new_block[1*4 + i] = new_block[0*4 + i] ~ prev_key.a[i][2]
+  end
+  for i = 1,4 do
+    new_block[2*4 + i] = new_block[1*4 + i] ~ prev_key.a[i][3]
+  end
+  for i = 1,4 do
+    new_block[3*4 + i] = new_block[2*4 + i] ~ prev_key.a[i][4]
+  end
+  return AESMat:new(new_block)
+end
+
+function KeyScheduler:new(key)
+  --[[ Creates a new KeyScheduler initialized with given key.
+  --
+  -- key: AESMat object, initialization key.
+  -- return:
+  -- - KeyScheduler object.
+  --]]
+  local block = {}
+  for i = 1,4 do
+    for j = 1,4 do
+      table.insert(block, mat.a[i][j])
+    end
+  end
+
+  setmetatable(KeyScheduler, {__index = ks})
+
+  local ks = {}
+  ks.rc = {}
+  ks.rc[1] = 0x01
+  for round = 2,10 do
+    ks.rc[round] = GF256:new(ks.rc[round - 1]).mul(GF256:new(0x02)).v
+  end
+  ks.keys = {}
+  ks.keys[0] = AESMat:new(block)
+  for round = 1,10 do
+    ks.keys[round] = KeyScheduler:cur_round_key(round, ks.keys[round - 1])
+  end
+  return ks
+end
+
+function KeyScheduler:get_key(round)
+  --[[ Returns a key for a given round.
+  --
+  -- round: Integer, round number between [0..12).
+  -- return:
+  -- - Array of bytes, 4 bytes representing the key word of a round.
+  --]]
+  return self.keys[round]
 end
 
 local AESMat = {}
@@ -164,6 +236,7 @@ function AESMat:shift_rows()
   self.a[2] = {self.a[2][2], self.a[2][3], self.a[2][4], self.a[2][1]}
   self.a[3] = {self.a[3][3], self.a[3][4], self.a[3][1], self.a[3][2]}
   self.a[4] = {self.a[4][4], self.a[4][1], self.a[4][2], self.a[4][3]}
+  return self
 end
 
 function AESMat:inv_shift_rows()
@@ -176,6 +249,7 @@ function AESMat:inv_shift_rows()
   self.a[2] = {self.a[2][4], self.a[2][1], self.a[2][2], self.a[2][3]}
   self.a[3] = {self.a[3][3], self.a[3][4], self.a[3][1], self.a[3][2]}
   self.a[4] = {self.a[4][2], self.a[4][3], self.a[4][4], self.a[4][1]}
+  return self
 end
 
 function AESMat:mix_columns()
