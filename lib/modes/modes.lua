@@ -1,4 +1,4 @@
--- @module lib.modes
+-- @module lib.modes.modes
 
 local modes = {}
 

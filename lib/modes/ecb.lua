@@ -65,7 +65,8 @@ function ecb.decrypt(ciphertext, key, block_cipher)
     end
   end
 
-  pad_pos = 1
+  -- In case no padding was added, returned the whole thing.
+  pad_pos = #plaintext_padded + 1
   for i = 1,#plaintext_padded do
     if plaintext_padded[i] == 128 then
       pad_pos = i
