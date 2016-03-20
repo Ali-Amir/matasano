@@ -342,10 +342,45 @@ function aes.encrypt(block, key)
   return ciphertext
 end
 
-function aes.decrypt()
-  --[[ TODO
+function aes.decrypt(ciphertext, key)
+  --[[ Decrypts a block of size 128 bits with a key key under AES:
+  -- https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
   --
+  -- ciphertext: Array of bytes, of length 16, the ciphertext to be decrypted.
+  -- key: Integer, key of encryption.
+  -- return:
+  -- - Array of bytes, the plaintext.
   --]]
+  -- 0. Initialize variables.
+  local rounds = 10 
+  local input_state = AESMat:new(ciphertext)
+  local key_mat = AESMat:new(key)
+  local key_scheduler = KeyScheduler:new(key_mat)
+  -- 1. Add round key.
+  local round_key = key_scheduler:get_key(rounds - 0)
+  input_state:add(round_key)
+  -- 2. Do the rounds.
+  for round = 1,rounds do
+    -- 2.1. Inverse shift rows.
+    input_state:inv_shift_rows()
+    -- 2.2. Inverse substitute bytes.
+    input_state:inv_sub_bytes()
+    -- 2.3. Add round key.
+    round_key = key_scheduler:get_key(rounds - round)
+    input_state:add(round_key)
+    -- 2.4. Inverse mix columns.
+    if round ~= rounds then
+      input_state:inv_mix_columns()
+    end
+  end
+  -- Get the final state into a byte array.
+  ciphertext = {}
+  for j = 1,4 do
+    for i = 1,4 do
+      ciphertext[(j - 1)*4 + i] = input_state.a[i][j]
+    end
+  end
+  return ciphertext
 end
 
 aes.AESMat = AESMat

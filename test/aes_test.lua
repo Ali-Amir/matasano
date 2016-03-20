@@ -138,6 +138,12 @@ print()
 print("Testing end to end:")
 key = bytes.string2bytearray('YELLOW SUBMARINE')
 plaintext = bytes.string2bytearray('TOGETHER BECAUSE')
+ciphertext = bytes.bytearray2hex(aes.encrypt(plaintext, key))
+print("Encrypt: " .. ciphertext)
+assert(ciphertext == "58ee3bdb274c35d5fb3c8a64ba67b2ca", "Wrong answer!")
 
-print(bytes.bytearray2hex(aes.encrypt(plaintext, key)))
-assert(bytes.bytearray2hex(aes.encrypt(plaintext, key)) == "58ee3bdb274c35d5fb3c8a64ba67b2ca", "Wrong answer!")
+plaintext_decrypt = aes.decrypt(bytes.hex2bytearray(ciphertext), key)
+print("Decrypt: " .. bytes.bytearray2string(plaintext_decrypt))
+assert(bytes.bytearray2string(plaintext_decrypt) == bytes.bytearray2string(plaintext),
+      "Expected " .. bytes.bytearray2string(plaintext) .. " but got " ..
+      bytes.bytearray2string(plaintext_decrypt))
