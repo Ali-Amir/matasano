@@ -1,1 +1,1 @@
-# matasano
+# Matasano solutions in Lua.Here are my solutions to the Matasano crypto challenges. Organization of the folders is as follows:All of the helper methods and functions - such as AES encryption, bytes operations -  are placed in- lib/All of the challenge solutions are placed in- set?/All of the test files for the lib folder are placed in- test/
