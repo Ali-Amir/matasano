@@ -13,12 +13,12 @@ function ecb.encrypt(plaintext, key, block_cipher)
   -- - Array of bytes, the ciphertext.
   --]]
 
-  -- Make a copy padded with 100...00
+  -- Make a copy padded with zeros. --100...00
   local seq = {}
   for i = 1,#plaintext do
     table.insert(seq, plaintext[i])
   end
-  table.insert(seq, 128)
+  --table.insert(seq, 128) -- Using zero padding.
   while #seq % 16 ~= 0 do
     table.insert(seq, 0)
   end
@@ -66,10 +66,12 @@ function ecb.decrypt(ciphertext, key, block_cipher)
   end
 
   -- In case no padding was added, returned the whole thing.
+  --pad_pos = #plaintext_padded + 1
   pad_pos = #plaintext_padded + 1
   for i = 1,#plaintext_padded do
-    if plaintext_padded[i] == 128 then
-      pad_pos = i
+    --if plaintext_padded[i] == 128 then
+    if plaintext_padded[i] ~= 0 then
+      pad_pos = i + 1
     end
   end
 
