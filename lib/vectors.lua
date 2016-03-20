@@ -10,7 +10,7 @@ function vectors.diff(a, b)
   --  return:
   --  - Map with (key, a[key] - b[key]) 
   --]]
-  result = {}
+  local result = {}
   for k, v in pairs(a) do
     result[k] = v
   end
@@ -33,7 +33,7 @@ function vectors.norm(a, norm_type)
   --]]
   norm_type = norm_type or "l2"
   if norm_type == "l2" then
-    sum = 0.0
+    local sum = 0.0
     for k, v in pairs(a) do
       sum = sum + v*v
     end

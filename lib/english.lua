@@ -49,6 +49,8 @@ function english.is_punctutation(ch)
   -- return:
   -- - Boolean, indicating whether the input is a punctutation sign.
   --]]
+  local start_pos = nil
+  local end_pos = nil
   start_pos, end_pos = string.find(english.punctutation, "%"..ch)
   return start_pos ~= nil
 end

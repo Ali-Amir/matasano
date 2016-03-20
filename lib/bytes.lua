@@ -73,11 +73,11 @@ function bytes.hex2bytearray(a)
   -- return:
   -- - Array of bytes.
   --]]
-  result = {}
+  local result = {}
   for i = 1, string.len(a), 2 do
-    first_triple = bytes.hexdigit2decimal(a:sub(i, i))
-    second_triple = bytes.hexdigit2decimal(a:sub(i+1, i+1))
-    byte = first_triple*16 + second_triple 
+    local first_triple = bytes.hexdigit2decimal(a:sub(i, i))
+    local second_triple = bytes.hexdigit2decimal(a:sub(i+1, i+1))
+    local byte = first_triple*16 + second_triple 
     table.insert(result, byte)
   end
   return result
@@ -90,13 +90,13 @@ function bytes.base642bytearray(a)
   -- return:
   -- - Array of bytes.
   --]]
-  result = {}
+  local result = {}
   for i = 1, string.len(a), 4 do
-    first_six = bytes.base64digit2decimal(a:sub(i, i))
-    second_six = bytes.base64digit2decimal(a:sub(i+1, i+1))
-    third_six = bytes.base64digit2decimal(a:sub(i+2, i+2))
-    fourth_six = bytes.base64digit2decimal(a:sub(i+3, i+3))
-    value = first_six*64*64*64 + second_six*64*64 + third_six*64 + fourth_six
+    local first_six = bytes.base64digit2decimal(a:sub(i, i))
+    local second_six = bytes.base64digit2decimal(a:sub(i+1, i+1))
+    local third_six = bytes.base64digit2decimal(a:sub(i+2, i+2))
+    local fourth_six = bytes.base64digit2decimal(a:sub(i+3, i+3))
+    local value = first_six*64*64*64 + second_six*64*64 + third_six*64 + fourth_six
     table.insert(result, math.floor(value / 256 / 256))
     if third_six ~= "=" then
       table.insert(result, math.floor(value / 256) % 256)
@@ -115,17 +115,17 @@ function bytes.bytearray2base64(a)
   -- return:
   -- - Base64 string.
   --]]
-  result = ""
+  local result = ""
   for i = 1, #a, 3 do
-    a1 = a[i]
-    a2 = a[i+1] or 0
-    a3 = a[i+2] or 0
-    total_value = a1*256*256 + a2*256 + a3
+    local a1 = a[i]
+    local a2 = a[i+1] or 0
+    local a3 = a[i+2] or 0
+    local total_value = a1*256*256 + a2*256 + a3
 
-    c1 = bytes.decimal2base64digit(math.floor(total_value / math.pow(64, 3)))
-    c2 = bytes.decimal2base64digit(math.floor((total_value / math.pow(64, 2))) % 64)
-    c3 = bytes.decimal2base64digit(math.floor((total_value / math.pow(64, 1))) % 64)
-    c4 = bytes.decimal2base64digit(total_value % 64)
+    local c1 = bytes.decimal2base64digit(math.floor(total_value / math.pow(64, 3)))
+    local c2 = bytes.decimal2base64digit(math.floor((total_value / math.pow(64, 2))) % 64)
+    local c3 = bytes.decimal2base64digit(math.floor((total_value / math.pow(64, 1))) % 64)
+    local c4 = bytes.decimal2base64digit(total_value % 64)
 
     if i == #a then
       c3, c4 = "=", "="      
@@ -144,7 +144,7 @@ function bytes.bytearrayxor(a, b)
   -- return:
   -- - Byte array of the same length as input arrays.
   --]]
-  c = {}
+  local c = {}
   for i = 1, #a do
     table.insert(c, bit32.bxor(a[i], b[i]))
   end
@@ -158,11 +158,11 @@ function bytes.bytearray2hex(a)
   -- return:
   -- - Hex string.
   --]]
-  c = ""
+  local c = ""
   for i = 1, #a do
-    byte = a[i]
-    c1 = bytes.decimal2hexdigit(math.floor(byte / 16))
-    c2 = bytes.decimal2hexdigit(byte % 16)
+    local byte = a[i]
+    local c1 = bytes.decimal2hexdigit(math.floor(byte / 16))
+    local c2 = bytes.decimal2hexdigit(byte % 16)
     c = c .. c1 .. c2
   end
   return c
@@ -175,7 +175,7 @@ function bytes.bytearray2string(a)
   -- return:
   -- - String.
   --]]
-  c = ""
+  local c = ""
   for i = 1, #a do
     c = c .. string.char(a[i])
   end
@@ -189,7 +189,7 @@ function bytes.string2bytearray(a)
   -- return:
   -- - Byte array.
   --]]
-  byte_array = {}
+  local byte_array = {}
   for i = 1, #a do
     table.insert(byte_array, string.byte(a:sub(i, i)))
   end
@@ -203,10 +203,11 @@ function bytes.popcount(a)
   -- return:
   -- - Integer, number of 1's.
   --]]
-  num_ones = 0
-  while a > 0 do
-    num_ones = num_ones + (bit32.band(a, 1))
-    a = bit32.arshift(a, 1)
+  local num_ones = 0
+  local x = a
+  while x > 0 do
+    num_ones = num_ones + (bit32.band(x, 1))
+    x = bit32.arshift(x, 1)
   end
   return num_ones
 end

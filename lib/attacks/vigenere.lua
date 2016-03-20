@@ -23,14 +23,14 @@ function vigenere.score_key_size(seq, key_size, num_blocks)
   --]]
   num_blocks = num_blocks or 3
 
-  limit = math.min(num_blocks * key_size - 1, #seq)
+  local limit = math.min(num_blocks * key_size - 1, #seq)
 
-  total_sum_hd = 0.0
-  num_summands = 0
+  local total_sum_hd = 0.0
+  local num_summands = 0
   for f_element = 1,limit,key_size do
     for s_element = f_element+key_size,limit,key_size do
-      f_array = {}
-      s_array = {}
+      local f_array = {}
+      local s_array = {}
       for i = 1,key_size do
         table.insert(f_array, seq[f_element + i - 1])
         if s_element+i-1 <= limit then
@@ -57,12 +57,12 @@ function vigenere.attack(seq)
   --   decreasing likelihood. All of the keys have the same key size that was
   --   determined to be the most likely.
   --]]
-  key_score_map = {}
+  local key_score_map = {}
   for KEY_SIZE = 1,40 do
     key_score_map[KEY_SIZE] = vigenere.score_key_size(text_bytes, KEY_SIZE, 4)
   end
-  key_score_pairs = sorting.sort_table_by_value(key_score_map)
-  candidates = common.break_k_char_encoding(text_bytes, key_score_pairs[1][1])
+  local key_score_pairs = sorting.sort_table_by_value(key_score_map)
+  local candidates = common.break_k_char_encoding(text_bytes, key_score_pairs[1][1])
   return candidates 
 end
 

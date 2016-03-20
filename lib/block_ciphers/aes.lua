@@ -310,7 +310,8 @@ function aes.encrypt(block, key)
   -- return:
   -- - Array of bytes, the ciphertext.
   --]]
-  -- 0. Initialize variables.
+  -- 0. Initialize variables, assert things.
+  assert(#block == 16, "Input block of wrong size: " .. #block)
   local rounds = 10 
   local input_state = AESMat:new(block)
   local key_mat = AESMat:new(key)
@@ -351,7 +352,8 @@ function aes.decrypt(ciphertext, key)
   -- return:
   -- - Array of bytes, the plaintext.
   --]]
-  -- 0. Initialize variables.
+  -- 0. Initialize variables, assert things.
+  assert(#ciphertext == 16, "Ciphertext is of wrong length: " .. #ciphertext)
   local rounds = 10 
   local input_state = AESMat:new(ciphertext)
   local key_mat = AESMat:new(key)

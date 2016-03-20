@@ -9,7 +9,7 @@ function sorting.sort_table_by_value(input_table)
   -- return:
   -- - Array of tuples, sorted array.
   --]]
-  kv_pairs = {}
+  local kv_pairs = {}
   for k,v in pairs(input_table) do
     table.insert(kv_pairs, {k, v})
   end

@@ -15,9 +15,9 @@ function toolbox.score_string_as_english(text)
   -- return:
   -- - Double, the score.
   --]]
-  freq = {}
+  local freq = {}
   for i = 1,#text do
-    ch = string.lower(text:sub(i, i))
+    local ch = string.lower(text:sub(i, i))
     if english.is_alpha(ch) then
       if freq[ch] == nil then
         freq[ch] = 0.0
@@ -26,9 +26,9 @@ function toolbox.score_string_as_english(text)
     end
   end
 
-  penalty = 0.0
+  local penalty = 0.0
   for i = 1,#text do
-    ch = text:sub(i, i)
+    local ch = text:sub(i, i)
     if not english.is_valid_char(ch) then
       penalty = penalty + 1e3/#text
     end
@@ -45,8 +45,8 @@ function toolbox.replicate_to_match(piece, len)
   -- return:
   -- - Array of bytes, piece replicated to match length len.
   --]]
-  result = {}
-  piece_index = 0
+  local result = {}
+  local piece_index = 0
   while #result < len do
     result[#result + 1] = piece[piece_index + 1]
     piece_index = (piece_index + 1) % #piece
@@ -76,7 +76,7 @@ function toolbox.hamming_distance(a, b)
   --]]
   assert(#a == #b, "Inputs have to be of the same length")
 
-  hd = 0
+  local hd = 0
   for i = 1, #a do
     hd = hd + bytes.popcount(bit32.bxor(a[i], b[i]))
   end

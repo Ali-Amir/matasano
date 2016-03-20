@@ -13,8 +13,8 @@ function files.readfile(filename, format)
   -- - String, if format == "string"; contents of file interpreted as plaintext.
   -- - Array of bytes, if format == "byte"; contents of file interpreted as bytes.
   --]]
-  text = ""
-  file = io.open(filename, "r")
+  local text = ""
+  local file = io.open(filename, "r")
   for line in file:lines() do
     text = text .. "\n" .. line
   end

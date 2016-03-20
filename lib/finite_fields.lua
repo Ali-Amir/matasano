@@ -25,8 +25,8 @@ function GF256:mul(B)
   -- return:
   -- - GF256 object, self after being multipled by b; modifies self.
   --]]
-  a = self.v
-  b = B.v
+  local a = self.v
+  local b = B.v
   local p = 0
   for iter = 1,8 do
     if a == 0 or b == 0 then
@@ -40,7 +40,7 @@ function GF256:mul(B)
     -- Divide b by x.
     b = b >> 1
     -- Remember carry.
-    carry = (a >> 7) & 1
+    local carry = (a >> 7) & 1
     -- Multiply a by x.
     a = (a << 1) & 255
     if carry > 0 then
