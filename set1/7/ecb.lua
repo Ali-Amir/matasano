@@ -1,23 +1,8 @@
-local bytes = require('lib.bytes')
+-- @module lib.modes.ecb
 
-local encode = {}
-encode.block_ciphers = {}
-function encode.block_ciphers.AES(block, key)
-  --[[ Encrypts a block of size 128 with a key key under AES:
-  -- https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
-  --
-  -- block: Array of bytes, of length 128, the plaintext to be encrypted.
-  -- key: Integer, key of encryption.
-  -- return:
-  -- - Array of bytes, the ciphertext.
-  --]]
-  -- 10 cycles for 128-bit key
-  cycles = 10 
-  -- TODO
-end
+local ecb = {}
 
-encode.modes = {}
-function encode.modes.ECB(plaintext, key, block_cipher)
+function ecb.encode(plaintext, key, block_cipher)
   --[[ Encrypts a plaintext under ECB mode:
   -- https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
   --
@@ -53,3 +38,8 @@ function encode.modes.ECB(plaintext, key, block_cipher)
   return ciphertext
 end
 
+function ecb.decode()
+
+end
+
+return ecb
