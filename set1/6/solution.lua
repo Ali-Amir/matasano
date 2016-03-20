@@ -1,7 +1,7 @@
 local bytes = require('lib.bytes')
 local files = require('lib.files')
-local sorting = require('lib.sorting')
 local toolbox = require('lib.toolbox')
+local vigenere = require('lib.attacks.vigenere')
 
 -- Test 1 --
 a = "this is a test"
@@ -15,6 +15,6 @@ assert(toolbox.hamming_distance(bytes.string2bytearray(a),
 text = files.readfile("set1/6/6.txt"):gsub("\n", "")
 text_bytes = bytes.base642bytearray(text)
 
-candidates = toolbox.decode_vigenere(text_bytes)
+candidates = vigenere.attack(text_bytes)
 print("Best result="..candidates[1][1][2])
 

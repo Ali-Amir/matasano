@@ -1,5 +1,5 @@
 local bytes = require('lib.bytes')
-local toolbox = require('lib.toolbox')
+local common = require('lib.attacks.common')
 
 best_so_far = math.huge
 best_decoding = ""
@@ -10,7 +10,7 @@ while true do
   if cipher == nil then break end
 
   cipher_bytes = bytes.hex2bytearray(cipher)
-  decodings = toolbox.decode_one_char_encryption(cipher_bytes)
+  decodings = common.break_one_char_encryption(cipher_bytes)
   if decodings[1][2] < best_so_far then
     best_so_far = decodings[1][2]
     best_decoding = decodings[1][1][2]
