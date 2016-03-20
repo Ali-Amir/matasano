@@ -1,5 +1,6 @@
 -- @module lib.block_ciphers.aes
 
+local bytes = require('lib.bytes')
 local GF256 = require('lib.finite_fields').GF256
 
 local aes = {}
@@ -222,10 +223,11 @@ function KeyScheduler:g(round, word)
   -- https://engineering.purdue.edu/kak/compsec/NewLectures/Lecture8.pdf
   --
   -- round: Integer, current round.
-  -- word: Array of bytes, 4 bytes that constitute the word; modifies the input.
+  -- word: Array of bytes, 4 bytes that constitute the word; does not modify input.
   -- return:
   -- - Array of bytes, output word.
   --]]
+  word = {word[2], word[3], word[4], word[1]}
   for i = 1,4 do
     word[i] = AESMat.sbox[word[i] + 1]
   end
@@ -266,13 +268,6 @@ function KeyScheduler:new(key)
   -- return:
   -- - KeyScheduler object.
   --]]
-  local block = {}
-  for i = 1,4 do
-    for j = 1,4 do
-      table.insert(block, key.a[i][j])
-    end
-  end
-
   local ks = {}
   setmetatable(ks, {__index = KeyScheduler})
   ks.rcon = {}
@@ -280,6 +275,14 @@ function KeyScheduler:new(key)
   for round = 2,10 do
     ks.rcon[round] = (GF256:new(ks.rcon[round - 1])):mul(GF256:new(0x02)).v
   end
+
+  local block = {}
+  for j = 1,4 do
+    for i = 1,4 do
+      table.insert(block, key.a[i][j])
+    end
+  end
+
   ks.keys = {}
   ks.keys[0] = AESMat:new(block)
   for round = 1,10 do
@@ -322,7 +325,9 @@ function aes.encrypt(block, key)
     -- 2.2. Shift rows.
     input_state:shift_rows()
     -- 2.3. Mix rows.
-    input_state:mix_columns()
+    if round ~= rounds then
+      input_state:mix_columns()
+    end
     -- 2.4. Add round key.
     round_key = key_scheduler:get_key(round)
     input_state:add(round_key)
@@ -342,5 +347,8 @@ function aes.decrypt()
   --
   --]]
 end
+
+aes.AESMat = AESMat
+aes.KeyScheduler = KeyScheduler
 
 return aes
