@@ -2,28 +2,23 @@
 
 local ecb = {}
 
-function ecb.encrypt(plaintext, key, block_cipher)
+function ecb.encrypt(plaintext, key, block_cipher, padding)
   --[[ Encrypts a plaintext under ECB mode:
   -- https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
   --
   -- plaintext: Array of bytes, representing the text to be encrypted.
   -- block_cipher: A function that accepts a block of 128-bytes and returns a
   --               ciphertext.
+  -- padding: Function, padding function to use. Defaults to lib/padding/pkcs7.
   -- return:
   -- - Array of bytes, the ciphertext.
   --]]
+  padding = padding or require('lib.padding.pkcs7')
 
-  -- Make a copy padded with zeros. --100...00
-  local seq = {}
-  for i = 1,#plaintext do
-    table.insert(seq, plaintext[i])
-  end
-  --table.insert(seq, 128) -- Using zero padding.
-  while #seq % 16 ~= 0 do
-    table.insert(seq, 0)
-  end
-
+  -- Pad the plaintext.
+  local seq = padding.pad(plaintext, 16)
   local ciphertext = {}
+  -- Run the block cipher on blocks.
   for i = 1,#seq,16 do
     local block = {}
     for j = 0,15 do
@@ -38,16 +33,19 @@ function ecb.encrypt(plaintext, key, block_cipher)
   return ciphertext
 end
 
-function ecb.decrypt(ciphertext, key, block_cipher)
+function ecb.decrypt(ciphertext, key, block_cipher, padding)
   --[[ Decrypts a ciphertext under ECB mode:
   -- https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
   --
   -- ciphertext: Array of bytes, representing the text to be decrypted.
   -- block_cipher: A function that accepts a ciphertext, key of 128-bytes and
   --               returns a plaintext.
+  -- padding: Function, padding to use. Defaults to lib/padding/pkcs7.
   -- return:
   -- - Array of bytes, the plaintext. 
   --]]
+  
+  padding = padding or require('lib.padding.pkcs7')
   
   assert(#ciphertext % 16 == 0, "Ciphertext length has to be divisible by 16! "
          .. #ciphertext)
@@ -65,20 +63,7 @@ function ecb.decrypt(ciphertext, key, block_cipher)
     end
   end
 
-  -- In case no padding was added, returned the whole thing.
-  --pad_pos = #plaintext_padded + 1
-  pad_pos = #plaintext_padded + 1
-  for i = 1,#plaintext_padded do
-    --if plaintext_padded[i] == 128 then
-    if plaintext_padded[i] ~= 0 then
-      pad_pos = i + 1
-    end
-  end
-
-  plaintext = {}
-  for i = 1,pad_pos - 1 do
-    table.insert(plaintext, plaintext_padded[i])
-  end
+  local plaintext = padding.unpad(plaintext_padded)
   return plaintext
 end
 
