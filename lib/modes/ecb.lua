@@ -2,18 +2,23 @@
 
 local ecb = {}
 
-function ecb.encrypt(plaintext, key, block_cipher, padding)
+function ecb.encrypt(plaintext, key, block_cipher, extra_args)
   --[[ Encrypts a plaintext under ECB mode:
   -- https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
   --
   -- plaintext: Array of bytes, representing the text to be encrypted.
   -- block_cipher: A function that accepts a block of 128-bits and returns a
   --               ciphertext.
-  -- padding: Function, padding function to use. Defaults to lib/padding/pkcs7.
+  -- extra_args: Map, additional arguments. Defaults to {}. Supports:
+  --             - padding: Function, padding function to use. Defaults to
+  --               lib/padding/pkcs7.
+  --             - IV: Array of bytes, of length 16, the initialization vector
+  --               to use.
   -- return:
   -- - Array of bytes, the ciphertext.
   --]]
-  padding = padding or require('lib.padding.pkcs7')
+  extra_args = extra_args or {}
+  local padding = extra_args.padding or require('lib.padding.pkcs7')
 
   -- Pad the plaintext.
   local seq = padding.pad(plaintext, 16)

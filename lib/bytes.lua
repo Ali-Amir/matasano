@@ -212,4 +212,18 @@ function bytes.popcount(a)
   return num_ones
 end
 
+function bytes.random_bytearray(len)
+  --[[ Generates a byte array with iid sampled bytes.
+  --
+  -- len: Integer, length of the target array.
+  -- return:
+  -- - Array of bytes, of length len with random content.
+  --]]
+  random_array = {}
+  for i = 1,len do
+    table.insert(random_array, math.random(256) - 1)
+  end
+  return random_array
+end
+
 return bytes
