@@ -1,9 +1,12 @@
--- @module lib.modes.ecb
+-- @module lib.modes.cbc
 
-local ecb = {}
+local bytes = require('lib.bytes')
+local toolbox = require('lib.toolbox')
 
-function ecb.encrypt(plaintext, key, block_cipher, padding)
-  --[[ Encrypts a plaintext under ECB mode:
+local cbc = {}
+
+function cbc.encrypt(plaintext, key, block_cipher, padding)
+  --[[ Encrypts a plaintext under CBC mode:
   -- https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
   --
   -- plaintext: Array of bytes, representing the text to be encrypted.
@@ -17,6 +20,7 @@ function ecb.encrypt(plaintext, key, block_cipher, padding)
 
   -- Pad the plaintext.
   local seq = padding.pad(plaintext, 16)
+  local previous_cipher = toolbox.replicate_to_match({0}, 16)
   local ciphertext = {}
   -- Run the block cipher on blocks.
   for i = 1,#seq,16 do
@@ -24,8 +28,10 @@ function ecb.encrypt(plaintext, key, block_cipher, padding)
     for j = 0,15 do
       table.insert(block, seq[i+j])
     end
+    local sum = bytes.bytearrayxor(block, previous_cipher)
 
-    local cipherblock = block_cipher.encrypt(block, key)
+    local cipherblock = block_cipher.encrypt(sum, key)
+    previous_cipher = cipherblock
     for j = 1,#cipherblock do
       table.insert(ciphertext, cipherblock[j])
     end
@@ -33,8 +39,8 @@ function ecb.encrypt(plaintext, key, block_cipher, padding)
   return ciphertext
 end
 
-function ecb.decrypt(ciphertext, key, block_cipher, padding)
-  --[[ Decrypts a ciphertext under ECB mode:
+function cbc.decrypt(ciphertext, key, block_cipher, padding)
+  --[[ Decrypts a ciphertext under CBC mode:
   -- https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
   --
   -- ciphertext: Array of bytes, representing the text to be decrypted.
@@ -50,6 +56,7 @@ function ecb.decrypt(ciphertext, key, block_cipher, padding)
   assert(#ciphertext % 16 == 0, "Ciphertext length has to be divisible by 16! "
          .. #ciphertext)
 
+  local previous_cipher = toolbox.replicate_to_match({0}, 16)
   local plaintext_padded = {}
   for i = 1,#ciphertext,16 do
     local block = {}
@@ -57,7 +64,9 @@ function ecb.decrypt(ciphertext, key, block_cipher, padding)
       table.insert(block, ciphertext[i+j])
     end
 
-    local plaintextblock = block_cipher.decrypt(block, key)
+    local sumblock = block_cipher.decrypt(block, key)
+    local plaintextblock = bytes.bytearrayxor(sumblock, previous_cipher)
+    previous_cipher = block
     for j = 1,#plaintextblock do
       table.insert(plaintext_padded, plaintextblock[j])
     end
@@ -67,4 +76,4 @@ function ecb.decrypt(ciphertext, key, block_cipher, padding)
   return plaintext
 end
 
-return ecb
+return cbc 
