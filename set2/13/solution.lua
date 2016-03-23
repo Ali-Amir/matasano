@@ -50,9 +50,13 @@ end
 
 enc_oracle, dec_oracle = toolbox.new_encryption_oracle_aes_ecb('')
 -- Input to be modified for the attack.
-input = 'foo@bar.com'
+input = bytes.bytearray2string(toolbox.replicate_to_match({string.byte('A')}, 10)) ..
+        'admin' ..
+        bytes.bytearray2string(toolbox.replicate_to_match({11}, 11)) ..
+        bytes.bytearray2string(toolbox.replicate_to_match({string.byte('A')}, 12))
 -- Encryption to be played with for the attack.
-enc = enc_oracle(bytes.string2bytearray(profile_for(input)))
+enc = bytes.bytearray2string(enc_oracle(bytes.string2bytearray(profile_for(input))))
+enc = bytes.string2bytearray(enc:sub(1,16) .. enc:sub(33,64) .. enc:sub(17,32))
 -- Decryption of the attack.
 dec = bytes.bytearray2string(dec_oracle(enc))
 print(dec)
