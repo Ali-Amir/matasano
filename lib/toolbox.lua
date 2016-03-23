@@ -85,7 +85,7 @@ function toolbox.hamming_distance(a, b)
   return hd
 end
 
-function toolbox.new_encryption_oracle_aes_ecb(append_text)
+function toolbox.new_encryption_oracle_aes_ecb(append_text, extra_args)
   --[[ Creates a new encryption oracle that encrypts given data under
   -- AES-128-ECB.
   --
@@ -107,7 +107,6 @@ function toolbox.new_encryption_oracle_aes_ecb(append_text)
     -- return:
     -- - Array of bytes, the encrypted text.
     --]]
-    -- Append a random number of bytes in the front and back.
     assert(type(data_org) == 'table', 'Incorrect input type: ' .. type(data_org))
     data = {}
     for i = 1,#data_org do
@@ -124,9 +123,8 @@ function toolbox.new_encryption_oracle_aes_ecb(append_text)
     --
     -- ciphertext: Array of bytes, original data; not modified.
     -- return:
-    -- - Array of bytes, the encrypted text.
+    -- - Array of bytes, the decrypted text.
     --]]
-    -- Append a random number of bytes in the front and back.
     assert(type(ciphertext) == 'table', 'Incorrect input type: ' .. type(ciphertext))
     return ecb.decrypt(ciphertext, key, aes)
   end
