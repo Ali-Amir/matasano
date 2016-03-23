@@ -106,6 +106,7 @@ function toolbox.new_encryption_oracle_aes_ecb()
     -- - Array of bytes, the encrypted text.
     --]]
     -- Append a random number of bytes in the front and back.
+    assert(type(data_org) == 'table', 'Incorrect input type: ' .. type(data_org))
     data = {}
     for i = 1,#data_org do
       table.insert(data, data_org[i])
