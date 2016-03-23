@@ -10,8 +10,8 @@ function strings.split(str, char)
   -- return:
   -- - Array of strings, string after splitting.
   --]]
-  result = {}
-  accum = ""
+  local result = {}
+  local accum = ""
   for i = 1,#str do
     if str:sub(i,i) == char then
       table.insert(result, accum)
