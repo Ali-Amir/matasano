@@ -85,18 +85,32 @@ function toolbox.hamming_distance(a, b)
   return hd
 end
 
-function toolbox.new_encryption_oracle_aes_ecb(append_text, extra_args)
+function toolbox.new_encryption_oracle_aes_ecb(append_bytes, extra_args)
   --[[ Creates a new encryption oracle that encrypts given data under
   -- AES-128-ECB.
   --
   -- Generates a random key for AES and returns an encryptor that encrypts under
   -- that key, as well as the decryptor.
   --
-  -- append_text: String, text to be appended when encrypting:
-  --              E(input || append_text, key).
+  -- append_bytes: Byte array, pattern to be appended when encrypting:
+  --              E(input || append_bytes, key).
+  -- extra_args: Table, extra arguments:
+  --             - random_prepend: Boolean, whether to add a random prefix
+  --                               E(random_prepend||input||append_bytes, key);
+  --                               requires prepend_range to be set; defaults
+  --                               to false.
+  --             - preprend_range: Pair of integers, range of length of prepend
+  --                               to sample from; defaults to nil.
   -- return:
   -- - Function, the encryption oracle.
+  -- - Function, the decryption oracle.
   --]]
+  extra_args = extra_args or {}
+  extra_args.random_prepend = extra_args.random_prepend or false
+  assert(not extra_args.random_prepend or extra_args.prepend_range ~= nil,
+         "Prepend range needs to be set!")
+  assert(type(append_bytes) == 'table', "Incorrect input type: " .. type(append_bytes))
+
   -- Generate the key one byte at a time.
   math.randomseed(os.time())
   local key = bytes.random_bytearray(16)
@@ -108,11 +122,15 @@ function toolbox.new_encryption_oracle_aes_ecb(append_text, extra_args)
     -- - Array of bytes, the encrypted text.
     --]]
     assert(type(data_org) == 'table', 'Incorrect input type: ' .. type(data_org))
-    data = {}
+    -- Initialize the data.
+    local data = {}
+    if extra_args.random_prepend then
+      data = bytes.random_bytearray(math.random(extra_args.prepend_range[1],
+                                                extra_args.prepend_range[2]))
+    end
     for i = 1,#data_org do
       table.insert(data, data_org[i])
     end
-    local append_bytes = bytes.base642bytearray(append_text)
     for i = 1,#append_bytes do
       table.insert(data, append_bytes[i])
     end
