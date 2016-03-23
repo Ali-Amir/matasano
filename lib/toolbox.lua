@@ -85,13 +85,15 @@ function toolbox.hamming_distance(a, b)
   return hd
 end
 
-function toolbox.new_encryption_oracle_aes_ecb()
+function toolbox.new_encryption_oracle_aes_ecb(append_text)
   --[[ Creates a new encryption oracle that encrypts given data under
   -- AES-128-ECB.
   --
   -- Generates a random key for AES and returns an encryptor that encrypts under
-  -- that key.
+  -- that key, as well as the decryptor.
   --
+  -- append_text: String, text to be appended when encrypting:
+  --              E(input || append_text, key).
   -- return:
   -- - Function, the encryption oracle.
   --]]
@@ -111,14 +113,24 @@ function toolbox.new_encryption_oracle_aes_ecb()
     for i = 1,#data_org do
       table.insert(data, data_org[i])
     end
-    local append_text = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
     local append_bytes = bytes.base642bytearray(append_text)
     for i = 1,#append_bytes do
       table.insert(data, append_bytes[i])
     end
     return ecb.encrypt(data, key, aes)
   end
-  return aes_ecb_encryptor
+  function aes_ecb_decryptor(ciphertext)
+    --[[ An encryption oracle that decrypts given ciphertext under AES-128-ECB.
+    --
+    -- ciphertext: Array of bytes, original data; not modified.
+    -- return:
+    -- - Array of bytes, the encrypted text.
+    --]]
+    -- Append a random number of bytes in the front and back.
+    assert(type(ciphertext) == 'table', 'Incorrect input type: ' .. type(ciphertext))
+    return ecb.decrypt(ciphertext, key, aes)
+  end
+  return aes_ecb_encryptor, aes_ecb_decryptor
 end
 
 function toolbox.gcd(a, b)

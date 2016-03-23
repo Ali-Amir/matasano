@@ -4,7 +4,9 @@ local english = require('lib.english')
 local pkcs7 = require('lib.padding.pkcs7')
 local toolbox = require('lib.toolbox')
 
-oracle = toolbox.new_encryption_oracle_aes_ecb()
+local append_text = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
+
+oracle = toolbox.new_encryption_oracle_aes_ecb(append_text)
 
 function figure_out_block_size(oracle)
   --[[ Given an oracle, determines the block size it is using for encryption.
@@ -67,7 +69,6 @@ print("Is ECB = " .. tostring(is_ecb))
 print("Detected string = " .. unknown_str)
 print("Checking correctness...")
 
-local append_text = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
 assert(unknown_str == bytes.bytearray2string(bytes.base642bytearray(append_text)))
 
 print(bytes.bytearray2hex(oracle(bytes.string2bytearray("YELLOW SUBMARINE"))))

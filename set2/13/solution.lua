@@ -1,4 +1,6 @@
+local bytes = require('lib.bytes')
 local strings = require('lib.strings')
+local toolbox = require('lib.toolbox')
 
 function parse_cookie(cookie)
   --[[ Parses a cookie string.
@@ -46,4 +48,11 @@ function profile_for(email)
   return 'email='..email..'&uid='..uid..'&role=user'
 end
 
-print(profile_for('foo@bar'))
+enc_oracle, dec_oracle = toolbox.new_encryption_oracle_aes_ecb('')
+-- Input to be modified for the attack.
+input = 'foo@bar.com'
+-- Encryption to be played with for the attack.
+enc = enc_oracle(bytes.string2bytearray(profile_for(input)))
+-- Decryption of the attack.
+dec = bytes.bytearray2string(dec_oracle(enc))
+print(dec)
