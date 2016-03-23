@@ -120,4 +120,17 @@ function toolbox.new_encryption_oracle_aes_ecb()
   return aes_ecb_encryptor
 end
 
+function toolbox.gcd(a, b)
+  --[[ Determines gcd(a, b).
+  --
+  -- a, b: Integer, inputs to the function.
+  -- return:
+  -- - Integer, gcd(a, b).
+  --]]
+  if a == 0 then
+    return b
+  end
+  return toolbox.gcd(b % a, a)
+end
+
 return toolbox
