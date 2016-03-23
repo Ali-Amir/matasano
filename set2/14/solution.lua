@@ -1,6 +1,7 @@
 local bytes = require('lib.bytes')
 local detection = require('lib.attacks.detection')
 local english = require('lib.english')
+local pkcs7 = require('lib.padding.pkcs7')
 local toolbox = require('lib.toolbox')
 
 function figure_out_block_size(oracle)
@@ -17,7 +18,7 @@ function figure_out_block_size(oracle)
   return gcd
 end
 
-function figure_out_enc_pattern(oracle, ipattern)
+function figure_out_enc_pattern_and_len(oracle, ipattern)
   --[[ Figures out what ipattern encrypts to under the given oracle, which
   -- operates in ECB mode.
   --
@@ -25,6 +26,7 @@ function figure_out_enc_pattern(oracle, ipattern)
   -- ipattern: Array of bytes, of length block_size of the oracle.
   -- return:
   -- - Array of bytes, the encryption of ipattern.
+  -- - Integer, length of the hidden data.
   --]]
   local block_size = #ipattern
   local attack = string.rep(bytes.bytearray2string(ipattern), 4)
@@ -41,7 +43,8 @@ function figure_out_enc_pattern(oracle, ipattern)
       for i = 1,#enc-2*block_size+1,block_size do
         if enc:sub(i, i+block_size-1) == enc:sub(i+block_size, i+2*block_size-1) then
           print("Starting enc pattern from: " .. i)
-          return bytes.string2bytearray(enc:sub(i, i+block_size-1))
+          return bytes.string2bytearray(enc:sub(i, i+block_size-1)),
+                 #enc - i - 4*block_size + 1
         end
       end
     end
@@ -69,7 +72,8 @@ function encrypt_until_match_occurs(oracle, input, pattern)
   end
 end
 
-enc_or, dec_or = toolbox.new_encryption_oracle_aes_ecb(bytes.string2bytearray("ALLOHA BROTHERS"),
+unknown_str_expected = "ALLOHa brothers!!!"
+enc_or, dec_or = toolbox.new_encryption_oracle_aes_ecb(bytes.string2bytearray(unknown_str_expected),
                                                        {random_prepend = true,
                                                         prepend_range = {1,100}})
 -- 1. Figure out block size.
@@ -81,12 +85,12 @@ if not is_ecb then
 end
 -- 3. Initialize variables.
 local attack_length = block_size * 3
---local unknown_str_pad_len = figure_out_unknown_len(enc_or) TODO
-local unknown_str_padded = ""
+local unknown_str = ""
 local identification_pattern = bytes.string2bytearray(string.rep('\x00', block_size))
-local enc_pattern = figure_out_enc_pattern(enc_or, identification_pattern)
+local enc_pattern, unknown_str_len = figure_out_enc_pattern_and_len(enc_or, identification_pattern)
 assert(#enc_pattern == block_size)
 print("enc_pattern: " .. bytes.bytearray2hex(enc_pattern))
+print("len="..#unknown_str_expected .. " got="..unknown_str_len)
 -- 4. Brute valid chars first.
 -- Find out what \x0\x0\x0...\x0 encrypts to.
 -- Attack with \x0\x0\x0...\x0 AAAAAo
@@ -102,9 +106,10 @@ for i = 0,255 do
   end
 end
 -- 5. Recover unknown string byte by byte.
-while true do
+iter = 1
+while iter <= unknown_str_len do
   -- Setup an attack string and its encryption.
-  local num_a = ((-#unknown_str_padded - 1) % block_size + block_size) %
+  local num_a = ((-#unknown_str - 1) % block_size + block_size) %
       block_size
   local attack_str = bytes.bytearray2string(identification_pattern) ..
                      string.rep('A', num_a)
@@ -118,11 +123,11 @@ while true do
   end
   -- Figure out which block to consider. 
   local block_start_pos = start_pos + block_size +
-      math.floor(#unknown_str_padded / block_size) * block_size
+      math.floor(#unknown_str / block_size) * block_size
   local block = enc:sub(block_start_pos, block_start_pos + block_size - 1)
   for brute_ind = 1,256 do
     local brute_ch = brute_order[brute_ind]
-    local try_str = attack_str .. unknown_str_padded .. string.char(brute_ch)
+    local try_str = attack_str .. unknown_str .. string.char(brute_ch)
     assert(#try_str % block_size == 0)
     local try_bytes = bytes.string2bytearray(try_str)
     local try_enc = bytes.bytearray2string(encrypt_until_match_occurs(enc_or, try_bytes, enc_pattern))
@@ -133,13 +138,24 @@ while true do
     end
     -- Get the corresponding block.
     assert(#try_str - block_size == block_size +
-      math.floor(#unknown_str_padded / block_size) * block_size)
+      math.floor(#unknown_str / block_size) * block_size)
     local try_block = try_enc:sub(try_start_pos + #try_str - block_size,
                                   try_start_pos + #try_str - 1)
     if try_block == block then
       print("Found a char " .. brute_ch .. " " .. string.char(brute_ch))
-      unknown_str_padded = unknown_str_padded .. string.char(brute_ch)
+      -- If this is part of padding.
+      if (brute_ch == 1) then
+        unknown_str_len = #unknown_str
+        print("HERE! " .. unknown_str_len .. " iter=" .. iter)
+      else
+        unknown_str = unknown_str .. string.char(brute_ch)
+      end
       break
     end
   end
+  iter = iter + 1
 end
+print("UNKNOWN STRING = " .. unknown_str)
+print("Checking correctness...")
+assert(unknown_str == unknown_str_expected, "Wrong answer!")
+print("OK!")
